@@ -1,0 +1,6 @@
+SKU_Code_Bar_Code,Stone Number,Stone Type,Stone Name,Stone Description,Stone(No. of Pieces),Stone Origin,Stone Appearance,Stone Shape,Stone Weight,Stone Units,Stone Cut,Stone Clarity,Stone Color,Stone Price
+CR_SKU_Code_Bar_Code,CR_Stone Number,CR_Stone Type,CR_Stone Name,CR_Stone Description,CR_Stone(No. of Pieces),CR_Stone Origin,CR_Stone Appearance,CR_Stone Shape,CR_Stone Weight,CR_Stone Units,CR_Stone Cut,CR_Stone Clarity,CR_Stone Color,CR_Stone Price
+Unique SKU/Variant Code,Stone number associated with respective SKU code,Diamond or Gemstone?,Name of the stone,Description of the stone,No of stone pieces in a jewelery,Stone's origin (from country),Natural stone or enhanced,Shape of the stone,Weight of the stone,Unit of the Stone,Cut type of the stone,Clarity of the stone,Color of the stone,Price of the stone
+String,String,String,String,String,Number,String,String,String,Number,String,String,String,String,Number
+50,50,20,50,200,4,50,50,20,10,10,10,10,10,20
+Mandatory,Mandatory,Mandatory,Mandatory,Non-Mandatory,Non-Mandatory,Non-Mandatory,Non-Mandatory,Non-Mandatory,Non-Mandatory,Non-Mandatory,Non-Mandatory,Non-Mandatory,Non-Mandatory,Mandatory

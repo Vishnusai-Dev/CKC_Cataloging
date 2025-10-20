@@ -1,0 +1,5 @@
+CR_EcommSKUCode,CR_DiamondCost,CR_GemstoneCost,CR_MakingCharges,CR_WastageCharges,CR_AccessoriesCost,CR_MetalCost,CR_GSTCharges,CR_Price_without_Promotion,CR_Price_with_Promotion,Price_Group_Code
+Unique SKU code by Ecomm system,Cost price of Particular Diamond,Cost price of paticular gemstone,Making charges pf particular product,Loss of material while finishing the product, ,Weight of Product * Metal Cost,Taxes = gemstone cost+ making charges + wastage charges + accessories cost + metal cost,Selling price of the product,Selling price after discount value,Price Group Code(SELR/STOR/LOCZ/CSTG/ALL)
+Mandatory,Mandatory,Mandatory,Mandatory,Mandatory,Mandatory,Mandatory,Mandatory,Mandatory,Mandatory,Non-Mandatory
+String,Number,Number,Number,Number,Number,Number,Number,Number,Number,String
+50,20,20,20,20,20,20,20,20,20,20
