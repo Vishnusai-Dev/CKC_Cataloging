@@ -574,6 +574,10 @@ ERP_TO_CATALOG_MAP: Dict[str, str] = {
   "Pieces": "Pieces"
 }
 
+from typing import List, Dict, Tuple
+import pandas as pd
+from .common import barcode_to_ecomm_sku, validate_catalog_input
+
 def transform_catalog(input_df: pd.DataFrame) -> Tuple[pd.DataFrame, pd.DataFrame]:
     df, err = validate_catalog_input(input_df.copy())
     out = pd.DataFrame(columns=CATALOG_HEADERS)
