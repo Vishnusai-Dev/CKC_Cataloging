@@ -1,17 +1,16 @@
 
-# Garnet Template Transformer — v2 (Modular + Validations)
+# Garnet Template Transformer — v3 (Catalog Included)
 
 Streamlit app to convert ERP Excel inputs into upload-ready CSVs for:
-- Seller Price Bulk Upload (embedded template)
-- Product Stone Bulk Upload (embedded template)
-- Catalog Creation (flexible; can embed once template is provided)
+- Seller Price (embedded template)
+- Product Stone (embedded template)
+- Catalog Creation (embedded template)
 
-## What's new in v2
-- Modular transformers (price, stone, catalog)
-- Embedded templates for Price & Stone (first 4 metadata rows preserved)
-- Row-level validations with an issue viewer
-- Data Dictionary (input → output)
-- Sample ERP input files included
+## Highlights
+- All three templates embedded; preserves first 4 metadata rows.
+- Logical ERP → Catalog mapping included.
+- Row-level validations with an issue viewer.
+- Sample ERP inputs included.
 
 ## Run locally
 ```bash
@@ -23,17 +22,11 @@ pip install -r requirements.txt
 streamlit run app.py
 ```
 
-## Catalog Creation
-Until you provide the official **Catalog output template CSV**, the app supports a flexible mode:
-- Upload ERP Catalog Excel
-- Upload your Catalog output template CSV
-- The app will align by column names and preserve the first 4 metadata rows if present.
-Once you share the final template, we'll embed it just like Price & Stone.
+## Deploy on Streamlit Cloud
+- Push the repo to GitHub
+- Set **Main file** to `app.py`
 
-## Templates (embedded)
-- templates/SellerPriceBulkUpload.csv
-- templates/ProductStoneBulkUpload.csv
-
-## Samples
-- samples/Sample_ERP_Price.xlsx
-- samples/Sample_ERP_Stone.xlsx
+## Notes
+- SKU Code = CKC_00 + 8-digit Bar Code
+- Stone Type = Article Type
+- Defaults: Is Active/Publish/Returnable/Cancellable = 'Y'

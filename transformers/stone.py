@@ -1,5 +1,5 @@
 
-from typing import List, Dict
+from typing import List, Dict, Tuple
 import pandas as pd
 from .common import validate_stone_input
 
@@ -91,7 +91,7 @@ STONE_TEMPLATE_ROWS: List[Dict[str, str]] = [
   }
 ]
 
-def transform_stone(input_df: pd.DataFrame) -> pd.DataFrame:
+def transform_stone(input_df: pd.DataFrame) -> Tuple[pd.DataFrame, pd.DataFrame]:
     df, err = validate_stone_input(input_df.copy())
     out = pd.DataFrame(columns=STONE_HEADERS)
     meta = pd.DataFrame(STONE_TEMPLATE_ROWS)

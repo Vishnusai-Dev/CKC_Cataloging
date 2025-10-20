@@ -29,7 +29,6 @@ def validate_stone_input(df: pd.DataFrame) -> Tuple[pd.DataFrame, pd.DataFrame]:
     if missing_cols:
         raise ValueError(f"Missing required columns: {missing_cols}")
     errors = []
-    # numeric checks
     for idx, row in df.iterrows():
         for f in ['Stone  No. of Pieces','Stone Weight','Stone Amount']:
             val = row[f]
@@ -37,5 +36,16 @@ def validate_stone_input(df: pd.DataFrame) -> Tuple[pd.DataFrame, pd.DataFrame]:
                 float(str(val).replace(',',''))
             except Exception:
                 errors.append({'row': idx, 'field': f, 'issue': 'Should be numeric'})
+    err_df = pd.DataFrame(errors) if errors else pd.DataFrame(columns=['row','field','issue'])
+    return df, err_df
+
+def validate_catalog_input(df: pd.DataFrame) -> Tuple[pd.DataFrame, pd.DataFrame]:
+    # Minimal checks; we will add specific checks as needed
+    errors = []
+    # Example: Bar Code presence if exists
+    if 'Bar Code' in df.columns:
+        for idx, bc in enumerate(df['Bar Code']):
+            if pd.isna(bc): 
+                errors.append({'row': idx, 'field': 'Bar Code', 'issue': 'Missing'})
     err_df = pd.DataFrame(errors) if errors else pd.DataFrame(columns=['row','field','issue'])
     return df, err_df

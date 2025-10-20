@@ -1,5 +1,5 @@
 
-from typing import List, Dict
+from typing import List, Dict, Tuple
 import pandas as pd
 from .common import barcode_to_ecomm_sku, validate_price_input
 
@@ -71,7 +71,7 @@ PRICE_TEMPLATE_ROWS: List[Dict[str, str]] = [
   }
 ]
 
-def transform_price(input_df: pd.DataFrame) -> pd.DataFrame:
+def transform_price(input_df: pd.DataFrame) -> Tuple[pd.DataFrame, pd.DataFrame]:
     df, err = validate_price_input(input_df.copy())
     out = pd.DataFrame(columns=PRICE_HEADERS)
     meta = pd.DataFrame(PRICE_TEMPLATE_ROWS)
@@ -90,12 +90,9 @@ def transform_price(input_df: pd.DataFrame) -> pd.DataFrame:
         'CR_Price_with_Promotion': df['Selling Price with Promotion'],
         'Price_Group_Code': ""
     })
-    numeric_cols = [
-        'CR_DiamondCost','CR_GemstoneCost','CR_MakingCharges','CR_WastageCharges',
-        'CR_AccessoriesCost','CR_MetalCost','CR_GSTCharges',
-        'CR_Price_without_Promotion','CR_Price_with_Promotion'
-    ]
-    for c in numeric_cols:
+    for c in ['CR_DiamondCost','CR_GemstoneCost','CR_MakingCharges','CR_WastageCharges',
+              'CR_AccessoriesCost','CR_MetalCost','CR_GSTCharges',
+              'CR_Price_without_Promotion','CR_Price_with_Promotion']:
         mapped_rows[c] = pd.to_numeric(mapped_rows[c], errors='coerce')
     mapped_rows['Price_Group_Code'] = mapped_rows['Price_Group_Code'].fillna("")
     out = pd.concat([out, mapped_rows], ignore_index=True)
