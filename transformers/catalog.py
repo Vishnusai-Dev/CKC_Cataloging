@@ -3,7 +3,7 @@ import pandas as pd
 from .common import barcode_to_ecomm_sku, validate_catalog_input
 
 # ---------------------------------------------------------------------
-# 1. Catalog Template Headers (embedded)
+# 1. Catalog Template Headers
 # ---------------------------------------------------------------------
 CATALOG_HEADERS: List[str] = [
     "Entity Identifier", "SKU Code", "Product Name", "Category Code", "Brand Code",
@@ -44,7 +44,7 @@ CATALOG_TEMPLATE_ROWS: List[Dict[str, str]] = [
 ]
 
 # ---------------------------------------------------------------------
-# 3. Logical ERP → Catalog Mapping
+# 3. ERP → Catalog Mapping
 # ---------------------------------------------------------------------
 ERP_TO_CATALOG_MAP: Dict[str, str] = {
     "Entity Identifier": "Entity",
@@ -83,14 +83,15 @@ ERP_TO_CATALOG_MAP: Dict[str, str] = {
 # 4. Transformer Function
 # ---------------------------------------------------------------------
 def transform_catalog(input_df: pd.DataFrame) -> Tuple[pd.DataFrame, pd.DataFrame]:
-    """Transforms ERP catalog input to upload-ready catalog format with defaults & image placeholders."""
+    """Transforms ERP catalog input to upload-ready catalog format with defaults, images & highlights."""
     df, err = validate_catalog_input(input_df.copy())
 
-    # Base structure
+    # Base setup
     out = pd.DataFrame(columns=CATALOG_HEADERS)
     meta = pd.DataFrame(CATALOG_TEMPLATE_ROWS)
     out = pd.concat([meta, out], ignore_index=True)
 
+    # Map ERP fields
     mapped = pd.DataFrame(columns=CATALOG_HEADERS)
     for col in CATALOG_HEADERS:
         if col in ERP_TO_CATALOG_MAP:
@@ -103,11 +104,11 @@ def transform_catalog(input_df: pd.DataFrame) -> Tuple[pd.DataFrame, pd.DataFram
     if "SKU Code" in mapped.columns and "Bar Code" in df.columns:
         mapped["SKU Code"] = df["Bar Code"].apply(barcode_to_ecomm_sku)
 
-    # Derive SKU short code (without CKC prefix) for image filenames
+    # SKU short for image placeholders
     mapped["_sku_short"] = mapped["SKU Code"].astype(str).str.replace("CKC_00", "", regex=False)
 
     # -----------------------------------------------------------------
-    #  Default static field values
+    # Default Field Values
     # -----------------------------------------------------------------
     defaults = {
         "Tags Keyword": "gold ring, Rhodolite Garnet ring, diamond gold ring, elegant gemstone ring, luxury jewelry, garnet diamond ring, statement gold ring, precious gemstone jewelry, garnet and diamond ring, timeless gold ring",
@@ -133,14 +134,14 @@ def transform_catalog(input_df: pd.DataFrame) -> Tuple[pd.DataFrame, pd.DataFram
         "Is EMI available": "No",
         "Is 'Trendy Fashion'": "Yes",
         "Is Returnable": "Yes",
-        "Is Cancellable": "Yes",
+        "Is Cancellable": "Yes"
     }
     for k, v in defaults.items():
         if k in mapped.columns:
             mapped[k] = v
 
     # -----------------------------------------------------------------
-    #  Image Placeholders (SKU_1.jpg … SKU_15.jpg, PLP images)
+    # Image Placeholders (SKU_1.jpg … SKU_15.jpg, PLP images)
     # -----------------------------------------------------------------
     for i in range(1, 16):
         col = f"PDP Image {i}"
@@ -152,9 +153,26 @@ def transform_catalog(input_df: pd.DataFrame) -> Tuple[pd.DataFrame, pd.DataFram
         if col in mapped.columns:
             mapped[col] = mapped["_sku_short"] + f"_plp{i}.jpg"
 
-    # Drop helper column
+    # -----------------------------------------------------------------
+    # Product Highlights (based on Metal Name)
+    # -----------------------------------------------------------------
+    highlight_template = (
+        "This product is made in {metal} gold verified by BIS hallmark, "
+        "Product dimensions mentioned are on approximation closest to the actual size. "
+        "The bill is your certificate, please produce the bill for future transactions "
+        "on all jewellery, silverware, giftware you purchase. "
+        "Diamond solitaires over quarter carat and certain rare gems may additionally "
+        "have an external laboratory certificate."
+    )
+
+    if "Product Highlights" in mapped.columns:
+        mapped["Product Highlights"] = mapped["Metal Name"].fillna("").apply(
+            lambda m: highlight_template.format(metal=m.strip()) if m.strip() else ""
+        )
+
+    # Drop helper
     mapped = mapped.drop(columns=["_sku_short"], errors="ignore")
 
-    # Combine metadata + mapped data
+    # Final combine
     final = pd.concat([out, mapped], ignore_index=True)
     return final, err
