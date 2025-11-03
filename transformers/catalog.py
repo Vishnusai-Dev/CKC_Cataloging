@@ -76,7 +76,8 @@ ERP_TO_CATALOG_MAP: Dict[str, str] = {
     "Bangle Shape": "Bangle Shape",
     "Hook Type": "Hook Type Description",
     "Pieces": "Pieces",
-    "Pieces UOM": "UOM"
+    "Pieces UOM": "UOM",
+    "Length": "Length"
 }
 
 # ---------------------------------------------------------------------
@@ -100,12 +101,41 @@ def transform_catalog(input_df: pd.DataFrame) -> Tuple[pd.DataFrame, pd.DataFram
         else:
             mapped[col] = ""
 
-    # Generate SKU Code with prefix
+    # -----------------------------------------------------------------
+    # Field-level Overrides and Custom Logic
+    # -----------------------------------------------------------------
+
+    # (1) Brand Code constant
+    if "Brand Code" in mapped.columns:
+        mapped["Brand Code"] = "CKC"
+
+    # (2) Is Price on Request empty
+    if "Is Price on Request" in mapped.columns:
+        mapped["Is Price on Request"] = ""
+
+    # (3) Length direct mapping
+    if "Length" in df.columns:
+        mapped["Length"] = df["Length"]
+
+    # (4) SKU exact — preserve all digits, including leading zeros
     if "SKU Code" in mapped.columns and "Bar Code" in df.columns:
         mapped["SKU Code"] = df["Bar Code"].apply(barcode_to_ecomm_sku)
 
-    # SKU short for image placeholders
-    mapped["_sku_short"] = mapped["SKU Code"].astype(str).str.replace("CKC_00", "", regex=False)
+    # Use full exact barcode for image generation
+    if "Bar Code" in df.columns:
+        mapped["_sku_exact"] = df["Bar Code"].astype(str)
+
+    # (4) PDP image placeholders using exact SKU
+    for i in range(1, 16):
+        col = f"PDP Image {i}"
+        if col in mapped.columns:
+            mapped[col] = mapped["_sku_exact"] + f"_{i}.jpg"
+
+    # (5) PLP preview images blank
+    for i in range(1, 4):
+        col = f"PLP Preview Image {i} "
+        if col in mapped.columns:
+            mapped[col] = ""
 
     # -----------------------------------------------------------------
     # Default Field Values
@@ -120,7 +150,6 @@ def transform_catalog(input_df: pd.DataFrame) -> Tuple[pd.DataFrame, pd.DataFram
         "Is 'New Arrival'": "Yes",
         "Is Try at Store": "Yes",
         "Is Try at Home": "Yes",
-        "Is Price on Request": "No",
         "Is Free Shipping?": "Yes",
         "Product Net weight Unit": "Gms",
         "Product Gross Weight Unit": "Gms",
@@ -140,18 +169,21 @@ def transform_catalog(input_df: pd.DataFrame) -> Tuple[pd.DataFrame, pd.DataFram
         if k in mapped.columns:
             mapped[k] = v
 
-    # -----------------------------------------------------------------
-    # Image Placeholders (SKU_1.jpg … SKU_15.jpg, PLP images)
-    # -----------------------------------------------------------------
-    for i in range(1, 16):
-        col = f"PDP Image {i}"
-        if col in mapped.columns:
-            mapped[col] = mapped["_sku_short"] + f"_{i}.jpg"
+    # (6) HighJewellery Flag empty
+    if "HighJewellery Flag " in mapped.columns:
+        mapped["HighJewellery Flag "] = ""
 
-    for i in range(1, 4):
-        col = f"PLP Preview Image {i} "
-        if col in mapped.columns:
-            mapped[col] = mapped["_sku_short"] + f"_plp{i}.jpg"
+    # (7) Metal Type from Metal Name (input)
+    if "Metal Type" in mapped.columns and "Metal Name" in df.columns:
+        mapped["Metal Type"] = df["Metal Name"]
+
+    # (8) Metal Name cleared
+    if "Metal Name" in mapped.columns:
+        mapped["Metal Name"] = ""
+
+    # (9) pieces from input Pieces
+    if "pieces" in mapped.columns and "Pieces" in df.columns:
+        mapped["pieces"] = df["Pieces"]
 
     # -----------------------------------------------------------------
     # Product Highlights (based on Metal Name)
@@ -166,13 +198,14 @@ def transform_catalog(input_df: pd.DataFrame) -> Tuple[pd.DataFrame, pd.DataFram
     )
 
     if "Product Highlights" in mapped.columns:
-        mapped["Product Highlights"] = mapped["Metal Name"].fillna("").apply(
+        mapped["Product Highlights"] = df.get("Metal Name", "").fillna("").apply(
             lambda m: highlight_template.format(metal=m.strip()) if m.strip() else ""
         )
 
-    # Drop helper
-    mapped = mapped.drop(columns=["_sku_short"], errors="ignore")
+    # -----------------------------------------------------------------
+    # Final Cleanup and Combine
+    # -----------------------------------------------------------------
+    mapped = mapped.drop(columns=["_sku_exact"], errors="ignore")
 
-    # Final combine
     final = pd.concat([out, mapped], ignore_index=True)
     return final, err
