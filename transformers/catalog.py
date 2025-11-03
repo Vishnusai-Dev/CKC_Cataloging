@@ -113,19 +113,27 @@ def transform_catalog(input_df: pd.DataFrame) -> Tuple[pd.DataFrame, pd.DataFram
     if "Is Price on Request" in mapped.columns:
         mapped["Is Price on Request"] = ""
 
-    # (3) Length direct mapping
+    # (3) Length direct mapping (already mapped; keep explicit)
     if "Length" in df.columns:
         mapped["Length"] = df["Length"]
 
-    # (4) SKU exact — preserve all digits, including leading zeros
+    # (4) SKU exact — preserve all digits, including leading zeros (for images)
+    #     We keep SKU Code via barcode_to_ecomm_sku for the template,
+    #     but image names must reflect the original Bar Code with leading zeros.
     if "SKU Code" in mapped.columns and "Bar Code" in df.columns:
         mapped["SKU Code"] = df["Bar Code"].apply(barcode_to_ecomm_sku)
 
-    # Use full exact barcode for image generation
+    # Create a zero-padded, exact Bar Code string for image naming
     if "Bar Code" in df.columns:
-        mapped["_sku_exact"] = df["Bar Code"].astype(str)
+        # Convert to string, strip, drop any trailing .0 (from floaty CSV reads)
+        raw_bar = df["Bar Code"].astype(str).str.strip().str.replace(r"\.0+$", "", regex=True)
+        # Determine target length: longest seen, minimum 10
+        target_len = max(10, int(raw_bar.str.len().max() or 0))
+        mapped["_sku_exact"] = raw_bar.str.zfill(target_len)
+    else:
+        mapped["_sku_exact"] = ""
 
-    # (4) PDP image placeholders using exact SKU
+    # PDP image placeholders using exact zero-padded SKU
     for i in range(1, 16):
         col = f"PDP Image {i}"
         if col in mapped.columns:
@@ -185,6 +193,10 @@ def transform_catalog(input_df: pd.DataFrame) -> Tuple[pd.DataFrame, pd.DataFram
     if "pieces" in mapped.columns and "Pieces" in df.columns:
         mapped["pieces"] = df["Pieces"]
 
+    # NEW: Bangle Sizes must be blank regardless of input
+    if "Bangle Sizes" in mapped.columns:
+        mapped["Bangle Sizes"] = ""
+
     # -----------------------------------------------------------------
     # Product Highlights (based on Metal Name)
     # -----------------------------------------------------------------
@@ -199,13 +211,12 @@ def transform_catalog(input_df: pd.DataFrame) -> Tuple[pd.DataFrame, pd.DataFram
 
     if "Product Highlights" in mapped.columns:
         mapped["Product Highlights"] = df.get("Metal Name", "").fillna("").apply(
-            lambda m: highlight_template.format(metal=m.strip()) if m.strip() else ""
+            lambda m: highlight_template.format(metal=str(m).strip()) if str(m).strip() else ""
         )
 
     # -----------------------------------------------------------------
     # Final Cleanup and Combine
     # -----------------------------------------------------------------
     mapped = mapped.drop(columns=["_sku_exact"], errors="ignore")
-
     final = pd.concat([out, mapped], ignore_index=True)
     return final, err
